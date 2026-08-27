@@ -1,0 +1,22 @@
+# Render.com free-tier deploy (https://render.com)
+# Push repo to GitHub, "New → Blueprint", connect repo.
+services:
+  - type: web
+    name: talkbridge
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HF_API
+        sync: false
+      - key: HF_MODEL
+        value: facebook/nllb-200-distilled-600M
+      - key: TRANSLATION_PROVIDER
+        value: auto
+      - key: LIBRETRANSLATE_URL
+        sync: false
+      - key: NUXT_PUBLIC_SOCKET_URL
+        sync: false
