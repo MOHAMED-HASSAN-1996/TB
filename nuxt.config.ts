@@ -29,8 +29,8 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
-    experimental: {
-      websocket: true
-    }
+    // Listen on the port provided by the host (HF Spaces sets $PORT=7860).
+    port: Number(process.env.PORT) || 3000,
+    host: true
   }
 })

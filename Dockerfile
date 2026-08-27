@@ -1,15 +1,18 @@
-# TalkBridge — free deployment Dockerfile (Node/Nitro server)
-FROM node:20-alpine AS build
+# TalkBridge on HuggingFace Spaces (free, no credit card).
+# HF Spaces sets $PORT (default 7860). Nitro listens on it.
+FROM node:20-slim
+
 WORKDIR /app
+ENV NODE_ENV=production
+
+# Install deps (leverage cache)
 COPY package*.json ./
 RUN npm install
+
+# Build the app
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/.output /app/.output
-COPY --from=build /app/node_modules /app/node_modules
-EXPOSE 3000
+EXPOSE 7860
+ENV PORT=7860
 CMD ["node", ".output/server/index.mjs"]

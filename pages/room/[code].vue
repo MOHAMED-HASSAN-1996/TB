@@ -273,51 +273,38 @@ const createAudioElement = (base64Audio) => {
 const setupSocketListeners = () => {
   if (!socket.value) return;
 
-  // حفظ socket ID الخاص بالمستخدم الحالي
+  // Socket id is generated client-side in the SSE composable.
   mySocketId.value = socket.value.id || '';
-  socket.value.on('connect', () => { mySocketId.value = socket.value.id || ''; });
-
-  // room-state هو المصدر الرئيسي للحقيقة - يستبدل القائمة كاملاً
   socket.value.on('room-state', (data) => {
     participants.value = data.participants || [];
-    // تحديث mySocketId عند أول room-state إذا لم يكن محدداً
-    if (!mySocketId.value && socket.value) mySocketId.value = socket.value.id || '';
-    console.debug('[Room] room-state updated, participants:', participants.value.length, 'humans:', participants.value.filter(p => !p.socketId.startsWith('bot-')).length);
+    if (!mySocketId.value) mySocketId.value = socket.value.id || '';
+    console.debug('[Room] room-state updated, participants:', participants.value.length);
   });
 
   socket.value.on('participant-left', (data) => {
     participants.value = participants.value.filter(p => p.socketId !== data.socketId);
-    console.debug('[Room] participant-left', data.socketId, '| remaining:', participants.value.length);
   });
 
   socket.value.on('participant-joined', (data) => {
-    // تشغيل صوت الدخول فقط للمشاركين البشريين الحقيقيين
     if (data.participant.name !== userName && data.participant.name !== 'Virtual Buddy') {
       playEntrySound();
     }
-
-    // إضافة المشارك فقط إذا لم يكن موجوداً (room-state سيصحح لاحقاً)
     const existing = participants.value.find(p => p.socketId === data.participant.socketId);
     if (!existing) participants.value.push(data.participant);
-    console.debug('[Room] participant-joined:', data.participant.name, '| total:', participants.value.length, '| humans:', participants.value.filter(p => !p.socketId.startsWith('bot-')).length);
   });
 
-    socket.value.on('transcript-update', (data) => {
-      if (!data || !data.originalText) return;
-
-      console.debug('[Room] transcript-update', data);
-
-      const isSelf = data.speakerName === userName;
-      const speakerP = participants.value.find(p => p.name === data.speakerName);
-
-      transcripts.value.push({
-       speakerName: isSelf ? 'You' : data.speakerName,
-       speakerLanguage: speakerP ? speakerP.language : userLang,
-       originalText: data.originalText,
-       translatedText: '',
-       isSelf
-      });
+  socket.value.on('transcript-update', (data) => {
+    if (!data || !data.originalText) return;
+    const isSelf = data.speakerName === userName;
+    const speakerP = participants.value.find(p => p.name === data.speakerName);
+    transcripts.value.push({
+      speakerName: isSelf ? 'You' : data.speakerName,
+      speakerLanguage: speakerP ? speakerP.language : userLang,
+      originalText: data.originalText,
+      translatedText: '',
+      isSelf
     });
+  });
 
   socket.value.on('translated-audio', (data) => {
     const speakerP = participants.value.find(p => p.name === data.speakerName);
@@ -325,21 +312,17 @@ const setupSocketListeners = () => {
       activeSpeaker.value = speakerP.socketId;
       activeSpeakerPeer.value = speakerP.socketId;
     }
-
     if (data.audioBase64) {
-        const a = createAudioElement(data.audioBase64);
-        a.onended = () => { 
-          activeSpeaker.value = null; 
-          activeSpeakerPeer.value = null;
-          playingAudioCount--;
-          if (playingAudioCount <= 0) isAudioPlaying.value = false;
-        };
+      const a = createAudioElement(data.audioBase64);
+      a.onended = () => {
+        activeSpeaker.value = null;
+        activeSpeakerPeer.value = null;
+        playingAudioCount--;
+        if (playingAudioCount <= 0) isAudioPlaying.value = false;
+      };
     } else {
-        setTimeout(() => { activeSpeaker.value = null; activeSpeakerPeer.value = null; }, 2000);
+      setTimeout(() => { activeSpeaker.value = null; activeSpeakerPeer.value = null; }, 2000);
     }
-
-    // UPDATE existing transcript entry with translation instead of pushing a duplicate.
-    // Find the last entry from this speaker with the same original text and no translation yet.
     let updated = false;
     for (let i = transcripts.value.length - 1; i >= 0; i--) {
       const t = transcripts.value[i];
@@ -349,7 +332,6 @@ const setupSocketListeners = () => {
         break;
       }
     }
-    // Fallback: if no existing entry found (e.g. bot greeting), add new entry
     if (!updated) {
       transcripts.value.push({
         speakerName: data.speakerName,
@@ -361,23 +343,14 @@ const setupSocketListeners = () => {
     }
   });
 
-  // Live typing listeners
-  socket.value.on('user-typing', (data) => {
-    try {
-      otherUserTyping.value = data.text || '';
-      otherUserTypingTranslated.value = data.translatedText || '';
-      if (typingTimeout) clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        otherUserTyping.value = '';
-        otherUserTypingTranslated.value = '';
-      }, 3000);
-    } catch (e) { console.debug('[Room] user-typing handler error', e); }
+  socket.value.on('rtc-signal', (data) => {
+    if (data.room?.toUpperCase() === String(route.params.code).toUpperCase()) {
+      webrtc.handleRemoteSignal(data.from, data.signal);
+    }
   });
 
-  socket.value.on('user-stop-typing', (data) => {
-    otherUserTyping.value = '';
-    otherUserTypingTranslated.value = '';
-    if (typingTimeout) { clearTimeout(typingTimeout); typingTimeout = null; }
+  socket.value.on('rtc-peer-left', (data) => {
+    webrtc.handlePeerLeft(data.socketId);
   });
 };
 
@@ -425,7 +398,7 @@ const toggleMic = () => {
 
 const handleTextChunk = (text) => {
   if (socket.value && text) {
-    socket.value.emit('text-chunk', { roomCode: route.params.code, text });
+    socket.value.emit('text-chunk', { text });
   }
 };
 

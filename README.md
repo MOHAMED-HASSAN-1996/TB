@@ -1,75 +1,26 @@
-# Nuxt Minimal Starter
+---
+title: TalkBridge — Free Voice & Video Meeting Translator
+emoji: 🌉
+colorFrom: blue
+colorTo: violet
+sdk: docker
+pinned: false
+---
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+# TalkBridge
 
-## Setup
+Real-time **voice + video** meeting translator. Each participant speaks in their own
+language; the other hears a translated **voice** (Edge TTS) plus a live transcript.
 
-Make sure to install dependencies:
+100% free stack:
+- **Translation**: HuggingFace NLLB-200 (any HF model via `HF_MODEL`) + LibreTranslate fallback.
+- **STT**: in-browser Web Speech API (default) + optional HF Whisper.
+- **Video**: peer-to-peer WebRTC (free STUN, no TURN needed for most networks).
+- **Signaling**: Server-Sent Events (SSE) — works on HF Spaces free tier (no WebSocket needed).
 
-```bash
-# npm
-npm install
+## Env (optional, all free)
+- `HF_API` — free HF token raises translation rate limits.
+- `HF_MODEL` — any HF translation model id (default `facebook/nllb-200-distilled-600M`).
+- `TRANSLATION_PROVIDER` — `auto` | `hf` | `libretranslate`.
 
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+No paid keys required. The app runs fully free with nothing set.
