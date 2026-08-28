@@ -18,6 +18,7 @@
 import { joinRoom, leaveRoom, getRoomParticipants } from '../utils/rooms';
 
 import { generateTTS } from '../utils/tts';
+import { translateText } from '../utils/translationProvider';
 import { registerPeer, unregisterPeer, broadcastFrom, sendTo, sendToPeer, getPeerCtx, setPeerCtx } from '../utils/wsHub';
 
 export default defineWebSocketHandler({
@@ -83,34 +84,45 @@ export default defineWebSocketHandler({
         const participants = getRoomParticipants(room);
         const sender = participants.find((p: any) => p.socketId === socketId);
         if (!sender || !text?.trim()) return;
+        const chunkId = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
         broadcastFrom(peer, room, 'transcript-update', {
+          chunkId,
           speakerName: sender.name,
+          speakerLang: sender.language,
           originalText: text,
           translations: []
         }, socketId);
 
+        // Server is the translation + TTS authority for remote audio so every
+        // listener receives the text translated into THEIR language AND a voice
+        // clip they can play reliably (Node Edge TTS). Each text chunk is
+        // processed per listener independently; failures fall back to the
+        // client's own speechSynthesis.
         for (const participant of participants) {
           if (participant.socketId === socketId) continue;
           (async () => {
-            // Translation now happens on the client (browser network) for
-            // reliability on Cloudflare's shared egress IP. The server just
-            // relays the original text; the client translates + speaks it.
-            const translatedText = text;
-
+            let translatedText = '';
             let audioBase64 = '';
             try {
+              translatedText = await translateText(text, sender.language, participant.targetLanguage || participant.language);
+            } catch (e) {
+              console.error('[ws] translate error', (e as any)?.message || e);
+              translatedText = text;
+            }
+            if (translatedText && translatedText.trim()) {
               audioBase64 = await Promise.race([
-                generateTTS(translatedText, participant.targetLanguage),
-                new Promise<string>((_, r) => setTimeout(() => r(''), 8000))
-              ]);
-            } catch (e) { console.error('[ws] tts error', e); }
-
+                generateTTS(translatedText, participant.targetLanguage || participant.language),
+                new Promise<string>((_, r) => setTimeout(() => r(''), 9000))
+              ]).catch(() => '');
+            }
             sendTo(peer, participant.socketId, 'translated-audio', {
+              chunkId,
               audioBase64: audioBase64 || '',
               speakerName: sender.name,
+              speakerLang: sender.language,
               originalText: text,
-              translatedText
+              translatedText: translatedText || text
             });
           })();
         }
@@ -124,6 +136,20 @@ export default defineWebSocketHandler({
         } else {
           broadcastFrom(peer, room, 'rtc-signal', { from: socketId, signal, room }, socketId);
         }
+        return;
+      }
+
+      case 'chat': {
+        const { name, text, language } = body || {};
+        if (!text?.trim()) return;
+        broadcastFrom(peer, room, 'chat-message', { name: name || socketId, text: String(text).trim(), language: language || null }, socketId);
+        return;
+      }
+
+      case 'video-frame': {
+        const { frame } = body || {};
+        if (!frame || typeof frame !== 'string' || frame.length > 200000) return;
+        broadcastFrom(peer, room, 'video-frame', { socketId, frame }, socketId);
         return;
       }
 

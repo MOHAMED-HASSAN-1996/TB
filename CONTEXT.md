@@ -3,56 +3,101 @@
 ## Purpose
 Real-time voice + video translation for professional meetings (Upwork use case).
 
-## Architecture (REVISED — no WebRTC)
-The previous version tried to relay raw audio/video between browsers via WebRTC
-peer connections. That path was unreliable (TURN/NAT, broken peers, no audible
-translated voice). We REMOVED WebRTC media entirely.
+## Architecture (REVISED — Node host + SERVER is translation/TTS authority)
+The previous versions tried (a) WebRTC media relay (broken) and then (b) a fully
+client-side browser pipeline (Web Speech STT → client MyMemory translate →
+`speechSynthesis` TTS), with the Cloudflare Worker just relaying text. That
+client-only path was unreliable: `speechSynthesis` voice availability varies and
+produced no reliable output, and server Edge TTS couldn't run on the Worker.
 
-Now each participant's browser does everything LOCALLY:
-1. **Capture** audio locally — either the mic (`getUserMedia`) or a tab/system
-   audio stream (`getDisplayMedia`, the "Tab Audio" button).
-2. **Speech-to-Text** — mic uses the free in-browser Web Speech API; tab audio is
-   recorded with `MediaRecorder` and sent to the free `/api/stt` endpoint (HuggingFace
-   Whisper, no key; Groq Whisper fallback when `GROQ_API_KEY` is set).
-3. **Translate** — client-side free providers (`composables/useVoiceTranslator.ts`):
-   MyMemory (CORS, uses the user's own IP so no shared-IP quota issue) then HF
-   NLLB-200 distilled (200 languages, free). Server-side `translationProvider.ts`
-   still exists for non-browser callers.
-4. **Speak** — `window.speechSynthesis` in the LISTENER's own target language.
+**Current model requires a persistent Node host (Render/Glitch/Koyeb — NOT
+Cloudflare Workers), because the server now owns translation + voice synthesis:**
 
-Only the final recognized TEXT is relayed to other participants over the existing
-WebSocket signaling channel (`/api/...` + `/_ws`). Each receiver then translates +
-speaks the text in their own language. This is why every user hears a translated
-voice + sees a live transcript in THEIR language, with zero WebRTC.
+1. **Capture** (local) — mic (`getUserMedia`) via Web Speech API, or tab/system
+   audio (`getDisplayMedia`).
+2. **Speech-to-Text** — Web Speech API (Chrome/Edge) with a MediaRecorder → `/api/stt`
+   (HF Whisper, free) fallback for browsers without it (Safari/Firefox).
+3. **Translate** — the SERVER (`server/utils/translationProvider.ts`) translates
+   each received text into every listener's `targetLanguage`. Provider chain:
+   MyMemory (fast, no key) → HuggingFace NLLB-200 / opus-mt (the "HF model") →
+   Google → Groq. MyMemory first for reliability/speed.
+4. **Speak** — the SERVER synthesizes the translated text with `node-edge-tts`
+   (Microsoft Edge free TTS, runs on Node) and sends the mp3 `audioBase64` to each
+   listener. Client plays the clip reliably; `speechSynthesis` is only a last-resort
+   fallback when the server returns no audio.
+
+Each `text-chunk` from a speaker does:
+- broadcast `transcript-update` {chunkId, originalText, speakerLang, speakerName} (immediate display)
+- for each OTHER participant, server translates to their `targetLanguage`, Edge-TTS
+  the result, and `sendTo` them `translated-audio` {chunkId, audioBase64, translatedText, ...}.
+- client matches `chunkId` to update the transcript with the translation + plays audio.
+No double-speak, no raw-audio relay between peers.
+
+## Deployment (critical)
+`render.yaml` + `Dockerfile` target a free **Node** host. Must build with the
+`node-server` preset (default `npm run build`) and run `node .output/server/index.mjs`.
+`node-edge-tts` uses Node `fs`/`tmpdir` → **does not run on Cloudflare Workers**.
+The old Worker (`talkbridge`) can no longer produce server audio.
 
 ## Key Logic
 - Each participant: { socketId, name, language (speaks), targetLanguage (hears) }.
-- "You hear translations in" is chosen on the landing/join page and saved to
-  `localStorage['talkbridge-target-lang']` so a returning user's language persists.
-- Audio is NEVER sent between peers — only text. No TURN, no STUN, no peer relay.
-- Remote tiles are listeners (presence only); the translated voice is produced
-  locally by each browser via `speechSynthesis`.
+- "You hear translations in" is chosen on landing/join and saved to
+  `localStorage['talkbridge-target-lang']`.
+- Audio between peers is server-generated TTS per listener — reliable in any language.
+- `_ws.ts` handlers: `join-room`, `text-chunk` (translate+TTS), `chat`, `leave-room`,
+  `video-frame` (currently disabled to avoid flood), `rtc-signal` (legacy unused).
 
 ## Files
-- `composables/useVoiceTranslator.ts` — the new core (capture → STT → translate → speak).
-- `composables/languages.ts` — shared language registry (flags, RTL, names).
-- `composables/useSocket.ts` — WebSocket signaling (presence + text relay only).
-- `pages/room/[code].vue` — room UI (mic/tab buttons, live transcript, listeners).
+- `server/routes/_ws.ts` — WS hub; `text-chunk` = translate + TTS per listener, sends
+  `transcript-update` + `translated-audio` (+ `chunkId` for client matching).
+- `server/utils/tts.ts` — `node-edge-tts` → base64 mp3 (voice per 2-letter lang). Node-only.
+- `server/utils/translationProvider.ts` — translateText chain (MyMemory → HF NLLB → Google → Groq).
+- `server/utils/transcribe.ts` + `server/api/stt.post.ts` — HF Whisper STT (mic fallback + tab audio).
+- `composables/useVoiceTranslator.ts` — STT capture (Web Speech + `/api/stt` fallback), local TTS fallback.
+- `composables/useSocket.ts` — WebSocket signaling + JSON actions.
+- `pages/room/[code].vue` — room UI; `handleRemoteText` (display original) + `handleTranslatedAudio`
+  (update translation + play server audio), manual text input for demo.
 - `pages/index.vue`, `pages/join/[code].vue` — landing + join with lang pickers.
-- `server/api/stt.post.ts` — free Whisper STT for captured tab audio.
-- `server/routes/_ws.ts` — WS hub: join-room, text-chunk relay, presence. `rtc-signal`
-  is kept for backward compat but no longer used by the client.
-- `server/utils/translationProvider.ts`, `transcribe.ts`, `tts.ts` — free providers.
+- `render.yaml`, `Dockerfile` — free Node host deploy.
+
+## UI / design (2026-08 port)
+- Premium dark+light design ported from the reference React app (now removed — `اساسي صوت - Copy`
+  was deleted after the port). Brand accent `#FF4D00` (orange gradients), glass cards
+  (`rounded-[28px]/[32px]`, `backdrop-blur`, `border-white/10`), Arabic RTL, IBM Plex Sans Arabic.
+- `tailwind.config.js` sets `darkMode: 'class'` + brand color. Default theme follows OS (dark default),
+  toggleable via header button / `useTheme`.
+- 3-page flow (verified live): `pages/index.vue` = full premium landing (hero w/ live conversation
+  demo card, how-it-works 3 steps, features grid 01→06, language strip, CTA "إنشاء غرفة" + join-by-code
+  modal, footer, dark toggle) → `/room/[code]` setup card (name + languages + "ابدأ" + invite) → active
+  room. Join page routes into `/room/[code]` with `?name&lang&targetLang` query.
+- VibeCurb reviewed = a skills library whose core taste constraints match the `frontend-design` skill
+  (distinctive palette/typography/signature, avoid AI-slop defaults) — applied to the landing redesign.
+- Landing CTA: creates `/room/[code]` (random code) with `?name&lang&targetLang&provider=auto`; join
+  modal routes to `/join/[code]`. Camera+mic auto-start on room join via `getUserMedia`. Camera fix +
+  clean `/join/[code]` invite + bottom toggle live.
+
+## Verified (local Node server, Playwright 2-user)
+- Room/journey test on `node .output/server/index.mjs`:
+  - Host A `/room/[code]` + invitee B `/join/[code]` both join (2 مشارك).
+  - Both directions deliver `transcript-update` (original) then `translated-audio`
+    with a real server translation AND `audioBase64` (Edge TTS mp3) that the client
+    plays. Verified A→B ("مساء الخير أصدقائي" → "Good evening, friends!" + audio)
+    and B→A ("اهلا بك" → "YEAH,HI." + audio, MyMemory quality).
+  - Translation now MyMemory-first (`translationProvider.ts`) so it never stalls on
+    HF cold starts; HF NLLB remains the model fallback.
+- The old "other party gets nothing" bug was fixed at the relay + provider level.
+- Deployed worker `talkbridge` (Cloudflare) is legacy and can NO LONGER do server
+  audio — deploy to Render instead (see Architecture + render.yaml).
 
 ## Free Stack
-- Translation: MyMemory (default, CORS) + HuggingFace NLLB-200 (free, no key).
-- STT: Web Speech API (mic) + HF Whisper via `/api/stt` (tab audio).
-- TTS: browser `speechSynthesis` (free, no network for playback).
-- Signaling: WebSocket (`/_ws`) — works on Node hosts and Cloudflare Workers.
-- No paid keys required. Optional `HF_API` / `GROQ_API_KEY` only raise rate limits.
+- Translation: **SERVER** MyMemory (default) + HuggingFace NLLB-200 / opus-mt (free, no key) + Google + Groq.
+- STT: Web Speech API (mic) + HF Whisper via `/api/stt` (all browsers, fallback).
+- TTS: `node-edge-tts` (Microsoft Edge free TTS on Node) → mp3 per listener; `speechSynthesis` fallback.
+- Signaling: WebSocket (`/_ws`) — persistent Node host required.
+- No paid keys required. Optional `HF_API` / `GROQ_API_KEY` only raise rate limits / speed.
 
 ## Known limitations
-- Web Speech Recognition works best in Chrome/Edge (Safari/Firefox limited).
-- "Tab Audio" needs Chrome + the user must tick "Share tab audio" in the picker.
-- `speechSynthesis` voice availability depends on the OS/browser installed voices.
-- Browser autoplay policy: audio plays after the user interacts (clicking a button).
+- Server TTS runs on Node only → deploy to a Node host (Render/Glitch/Koyeb), not Cloudflare Workers.
+- Web Speech Recognition works best in Chrome/Edge (Safari/Firefox use the Whisper `/api/stt` fallback).
+- MyMemory phrasing can be rough for short greetings; HF NLLB/Google give better quality when reachable.
+- Browser autoplay policy: audio plays after a user interaction (clicking a button).

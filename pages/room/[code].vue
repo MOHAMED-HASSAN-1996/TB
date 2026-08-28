@@ -1,252 +1,404 @@
 <template>
-  <div class="h-screen bg-[#0a0a0a] flex flex-col font-sans text-white overflow-hidden">
-    <!-- Header -->
-    <header class="h-16 shrink-0 border-b border-[#1f1f1f] bg-[#0a0a0a]/90 backdrop-blur-lg flex items-center justify-between px-4 sm:px-6 z-20 shadow-md">
-      <div class="flex items-center gap-4">
-        <NuxtLink to="/" class="flex items-center gap-2.5">
-          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_10px_rgba(37,99,235,0.3)]">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-          </div>
-          <span class="text-base font-bold tracking-tight hidden sm:block">TalkBridge</span>
-        </NuxtLink>
-        <div class="h-6 w-px bg-[#1f1f1f]"></div>
-        <div @click="copyCode" class="flex items-center gap-2 cursor-pointer group bg-[#141414] border border-[#1f1f1f] px-3 py-1.5 rounded-full hover:border-blue-500/50 transition">
-          <span class="font-mono text-blue-400 font-bold tracking-widest text-xs sm:text-sm truncate max-w-[120px] sm:max-w-xs">{{ inviteLink || route.params.code }}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-          <span v-if="copied" class="text-xs text-green-400">Copied!</span>
-        </div>
+  <div dir="rtl" lang="ar" class="min-h-screen w-full flex flex-col bg-[#F7F7F5] dark:bg-[#080808] text-zinc-900 dark:text-white">
+    <!-- SETUP -->
+    <div v-if="!started" class="flex-1 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <div class="pointer-events-none absolute inset-0">
+        <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[#FF4D00]/10 rounded-full blur-[80px]" />
       </div>
-
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-[#141414] rounded-lg border border-[#1f1f1f]">
-          <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-          <span class="text-sm text-gray-300 font-medium">{{ participants.length }} online</span>
+      <div class="w-full max-w-[520px] relative">
+        <div class="flex items-center justify-center gap-2.5 mb-6">
+          <div class="w-10 h-10 rounded-[14px] bg-[#FF4D00] grid place-items-center shadow-[0_8px_20px_rgba(255,77,0,0.3)]"><svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 0-7 7v2a7 7 0 0 0 14 0V9a7 7 0 0 0-7-7Z"/><path d="M12 16v4"/><path d="M8 20h8"/></svg></div>
+          <span class="text-xl font-black tracking-[-0.03em]">TalkBridge</span>
         </div>
-        <button @click="endMeeting" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg shadow-lg font-bold text-sm transition-colors">Leave</button>
-      </div>
-    </header>
-
-    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-      <!-- Main Area -->
-      <section class="flex-1 flex flex-col p-4 sm:p-6 overflow-y-auto bg-[#050505]">
-        <!-- Your control card -->
-        <div class="rounded-3xl bg-[#0f0f0f] border border-[#1f1f1f] flex flex-col relative overflow-hidden shadow-2xl mb-6">
-          <div class="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
-          <div class="p-4 flex justify-between items-start relative z-10">
-            <div class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold ring-1 ring-blue-500/30">YOU</div>
-            <div class="flex items-center gap-2 bg-[#000]/50 rounded-lg px-2 py-1 uppercase text-xs font-bold text-gray-400">
-              <span>{{ userLang }}</span><span class="text-gray-600">→</span><span class="text-emerald-400">{{ targetLang }}</span>
-            </div>
+        <div class="rounded-[28px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.08)] p-6 sm:p-7">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="px-2.5 py-1 rounded-full bg-[#FF4D00]/10 border border-[#FF4D00]/15 text-[#FF4D00] text-[11px] font-black tracking-widest">غرفة جديدة</span>
+            <span class="text-xs font-bold text-zinc-400">جاهزة في ثوانٍ</span>
           </div>
+          <h2 class="text-[22px] font-black tracking-[-0.03em]">استعد للانضمام</h2>
+          <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">اختر اسمك ولغتك — سنطلب إذن الكاميرا والميكروفون بعد البدء.</p>
 
-          <div class="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
-            <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.4)] mb-4 text-3xl sm:text-4xl font-bold transition-shadow duration-300"
-                 :class="translator.listening.value ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 ring-4 ring-blue-400/50 shadow-[0_0_60px_rgba(37,99,235,0.6)]' : 'bg-[#1f1f1f]'">
-              {{ userName.charAt(0).toUpperCase() }}
+          <div class="mt-6 space-y-4">
+            <div>
+              <label class="text-xs font-black text-zinc-700 dark:text-zinc-300">اسمك</label>
+              <input v-model="name" placeholder="مثال: أحمد" class="mt-1.5 w-full h-12 rounded-[14px] border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 px-4 text-[14px] font-medium focus:border-[#FF4D00] focus:ring-2 focus:ring-[#FF4D00]/20 outline-none" />
             </div>
-            <h2 class="text-xl sm:text-2xl font-bold text-white mb-1">{{ userName }}</h2>
-
-            <!-- Source picker + listen buttons -->
-            <div class="mt-4 flex flex-col items-center gap-3 w-full max-w-sm">
-              <div class="flex gap-2 w-full">
-                <button @click="startMic" :class="translator.listening.value && translator.source.value==='mic' ? 'bg-blue-600 text-white' : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#222]'" class="flex-1 border border-[#2a2a2a] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                  {{ translator.listening.value && translator.source.value==='mic' ? 'Listening (mic)' : 'Use Mic' }}
-                </button>
-                <button @click="startTab" :class="translator.listening.value && translator.source.value==='tab' ? 'bg-emerald-600 text-white' : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#222]'" class="flex-1 border border-[#2a2a2a] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                  {{ translator.listening.value && translator.source.value==='tab' ? 'Capturing tab' : 'Tab Audio' }}
-                </button>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-black text-zinc-700 dark:text-zinc-300">أتحدث</label>
+                <div class="mt-1.5"><LanguageSelector v-model="myLang" label="rtl" /></div>
               </div>
-
-              <div v-if="translator.interimText.value" class="text-sm text-gray-300 italic text-center truncate w-full">"{{ translator.interimText.value }}"</div>
-              <div v-if="translator.errorMsg.value" class="text-xs text-red-400 text-center bg-red-400/10 px-3 py-1 rounded-full border border-red-400/20">{{ translator.errorMsg.value }}</div>
-              <p class="text-xs text-gray-500 text-center max-w-xs">Pick <b>Mic</b> to speak, or <b>Tab Audio</b> to translate any video/meeting playing in a Chrome tab. Chrome speaks the translation in your language.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Remote / other listeners -->
-        <div class="grid gap-6 auto-rows-fr" :class="gridClass">
-          <div v-for="p in otherParticipants" :key="p.socketId" class="rounded-3xl bg-[#0f0f0f] border border-[#1f1f1f] flex flex-col relative overflow-hidden shadow-2xl min-h-[200px]">
-            <div class="absolute inset-0 bg-gradient-to-b from-emerald-900/10 to-transparent pointer-events-none"></div>
-            <div class="p-4 flex justify-between items-start relative z-10">
-              <div class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold ring-1 ring-emerald-500/30">LISTENER</div>
-              <div class="flex items-center gap-2 bg-[#000]/50 rounded-lg px-2 py-1 uppercase text-xs font-bold text-gray-400">
-                <span>{{ p.language }}</span><span class="text-gray-600">→</span><span class="text-emerald-400">{{ p.targetLanguage }}</span>
+              <div>
+                <label class="text-xs font-black text-zinc-700 dark:text-zinc-300">أسمع بـ</label>
+                <div class="mt-1.5"><LanguageSelector v-model="targetLang" label="rtl" /></div>
               </div>
             </div>
-            <div class="flex-1 flex flex-col items-center justify-center relative z-10">
-              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.3)] mb-4 text-2xl sm:text-3xl font-bold">{{ p.name.charAt(0).toUpperCase() }}</div>
-              <h2 class="text-lg sm:text-xl font-bold text-white mb-1 text-center px-4">{{ p.name }}</h2>
-              <p class="text-emerald-400 text-xs font-bold h-5" v-if="activeSpeaker === p.socketId">Speaking…</p>
+            <div class="rounded-[16px] border border-dashed border-zinc-300 dark:border-white/15 bg-zinc-50 dark:bg-white/[0.02] p-3 text-center">
+              <div class="text-[11px] font-black tracking-widest text-zinc-400">رمز الغرفة</div>
+              <div class="text-[20px] font-black tracking-[0.32em] text-[#FF4D00] select-all">{{ roomCode }}</div>
+            </div>
+            <button @click="startCallPreset" :disabled="!name.trim() || connecting" class="w-full h-[52px] rounded-[16px] bg-[#FF4D00] hover:bg-[#E64500] disabled:opacity-50 text-white font-black shadow-[0_10px_24px_rgba(255,77,0,0.3)] transition">
+              {{ connecting ? 'جارٍ الاتصال...' : 'بدء المكالمة — طلب إذن الكاميرا' }}
+            </button>
+            <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-[12px] p-2 text-center">{{ errorMsg }}</p>
+            <p v-if="mediaError" class="text-xs text-amber-700 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-[12px] p-2 text-center">{{ mediaError }}</p>
+          </div>
+        </div>
+        <button @click="leaveToHome" class="mx-auto mt-4 flex items-center gap-1.5 text-sm font-bold text-zinc-500 hover:text-[#FF4D00] transition"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg> العودة</button>
+      </div>
+    </div>
+
+    <!-- ACTIVE -->
+    <div v-else class="min-h-screen w-full flex flex-col">
+      <header class="h-[64px] shrink-0 px-4 sm:px-6 flex items-center justify-between border-b border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur sticky top-0 z-20">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-[12px] bg-[#FF4D00] grid place-items-center"><svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 0-7 7v2a7 7 0 0 0 14 0V9a7 7 0 0 0-7-7Z"/><path d="M12 16v4"/><path d="M8 20h8"/></svg></div>
+          <div>
+            <div class="text-sm font-black leading-none">TalkBridge</div>
+            <div class="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> مباشر • {{ participants.length }} مشارك</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-xs font-extrabold">
+            <span>{{ LANGUAGES[myLang]?.flag }} {{ LANGUAGES[myLang]?.nativeName }}</span>
+            <svg class="h-3.5 w-3.5 text-[#FF4D00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+            <span>{{ LANGUAGES[targetLang]?.flag }} {{ LANGUAGES[targetLang]?.nativeName }}</span>
+          </div>
+          <button @click="openInvite" class="h-9 px-4 rounded-full bg-[#FF4D00] hover:bg-[#E64500] text-white text-xs font-black inline-flex items-center gap-1.5">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>
+            دعوة
+          </button>
+          <button @click="theme.toggle()" class="w-9 h-9 rounded-full grid place-items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10">
+            <svg v-if="theme.isDark.value" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+            <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="flex-1 flex flex-col lg:flex-row gap-4 p-4 sm:p-6 max-w-[1400px] w-full mx-auto">
+        <div class="flex-1 flex flex-col gap-4 min-w-0">
+          <div v-if="participants.length <= 1" class="mx-auto text-sm font-bold text-zinc-500 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-full px-4 py-2 shadow-sm">
+            بانتظار انضمام الطرف الآخر — شارك رابط الدعوة
+          </div>
+          <div class="flex-1 flex items-center justify-center">
+            <VideoGrid :participants="gridParticipants" :self-stream="selfStream" class="w-full" :class="gridParticipants.length===1 ? 'max-w-[720px] mx-auto' : ''" />
+          </div>
+          <div v-if="translator.interimText.value" class="text-center text-sm text-zinc-600 dark:text-zinc-300 italic px-4 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-full mx-auto max-w-[80%] truncate">
+            "{{ translator.interimText.value }}"
+          </div>
+          <div v-if="translator.errorMsg.value" class="text-center text-xs font-bold text-red-600 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-full px-4 py-1.5 mx-auto flex items-center gap-2">
+            <span>{{ translator.errorMsg.value }}</span>
+            <button @click="translator.startMic(); micOn=true" class="underline">إعادة المحاولة</button>
+          </div>
+          <div class="flex items-center gap-2 justify-center">
+            <input v-model="manualTranscript" @keyup.enter="sendManualTranscript" placeholder="اكتب نصاً للتجربة بدون ميكروفون" class="h-9 rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 px-4 text-sm w-[280px] sm:w-[360px] focus:border-[#FF4D00] outline-none" />
+            <button @click="sendManualTranscript" class="h-9 px-4 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-black">إرسال كنص</button>
+          </div>
+          <div class="flex items-center justify-center">
+            <div class="rounded-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex items-center gap-2">
+              <span v-if="mediaError" class="hidden sm:inline text-xs font-bold text-amber-600 px-2">{{ mediaError }}</span>
+              <MeetingControls :listening="micOn" :camera-on="cameraOn" @toggle-mic="toggleMic" @toggle-camera="toggleCamera" @leave="confirmLeave" />
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- Transcript -->
-      <aside class="w-full h-1/2 md:h-auto md:w-[400px] xl:w-[450px] shrink-0 border-t md:border-t-0 md:border-l border-[#1f1f1f] bg-[#141414]/50 flex flex-col shadow-2xl z-10">
-        <div class="h-14 border-b border-[#1f1f1f] flex items-center px-4 shrink-0 bg-[#0a0a0a]">
-          <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-            Live Transcript
-          </h2>
-        </div>
-        <div class="flex-1 overflow-y-auto p-5 space-y-5" ref="scrollContainer">
-          <div v-if="transcripts.length === 0" class="h-full flex items-center justify-center text-gray-600 italic text-sm font-medium text-center">Speak or play audio — you'll see the original + translation here.</div>
-          <div v-for="(item, index) in transcripts" :key="index" class="flex flex-col gap-1.5">
-            <span class="text-[11px] font-bold tracking-widest uppercase flex items-center gap-1.5" :class="item.isSelf ? 'text-blue-500' : 'text-gray-500'">
-              <span>{{ LANGUAGES[item.speakerLanguage]?.flag || '🌐' }}</span><span>{{ item.speakerName }}</span>
-            </span>
-            <div class="max-w-[90%] rounded-2xl px-4 py-3 shadow-md border"
-                 :class="item.isSelf ? 'bg-blue-600/20 border-blue-500/40 text-white self-end rounded-br-none' : 'bg-[#1a1a1a] border-[#2a2a2a] text-gray-200 rounded-bl-none'">
-              <div v-if="item.originalText" :dir="isRtl(item.speakerLanguage) ? 'rtl' : 'ltr'" class="text-sm opacity-80 mb-1.5 italic">{{ item.originalText }}</div>
-              <hr class="border-[#2a2a2a] my-1.5" v-if="item.translatedText && item.translatedText !== item.originalText" />
-              <div v-if="item.translatedText && item.translatedText !== item.originalText" :dir="isRtl(userTargetLang) ? 'rtl' : 'ltr'" class="text-sm font-semibold text-white">{{ item.translatedText }}</div>
+        <aside class="w-full lg:w-[380px] xl:w-[420px] shrink-0 flex flex-col rounded-[24px] overflow-hidden border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-[0_8px_24px_rgba(0,0,0,0.06)] h-auto lg:h-[calc(100vh-88px)]">
+          <div class="flex p-1.5 gap-1 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.02]">
+            <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key" class="flex-1 h-9 rounded-[12px] inline-flex items-center justify-center gap-1.5 text-xs font-black transition" :class="activeTab===tab.key ? 'bg-[#FF4D00] text-white shadow' : 'text-zinc-500 hover:bg-white dark:hover:bg-white/5'">
+              <svg v-if="tab.key==='transcript'" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8l4 4v-4h2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H6Z"/></svg>
+              <svg v-else-if="tab.key==='chat'" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.5A8.5 8.5 0 0 1 12.5 20H8l-5 4 1.5-6A8.5 8.5 0 0 1 21 11.5Z"/></svg>
+              <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0ZM6 18a6 6 0 0 1 12 0v1H6v-1Z"/></svg>
+              {{ tab.label }}
+            </button>
+          </div>
+          <div class="flex-1 overflow-hidden min-h-[320px]">
+            <TranscriptPanel v-if="activeTab==='transcript'" :transcripts="transcripts" :user-target-lang="targetLang" />
+            <ChatPanel v-else-if="activeTab==='chat'" :messages="chatMessages" @send="sendChat" />
+            <div v-else class="h-full overflow-y-auto p-4 space-y-2">
+              <div v-for="p in participants" :key="p.socketId" class="flex items-center gap-3 p-3 rounded-[16px] border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.02]">
+                <div class="w-10 h-10 rounded-full bg-[#FF4D00] text-white grid place-items-center font-black">{{ (p.name||'?')[0].toUpperCase() }}</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5 text-sm font-black">{{ p.name }}<span v-if="p.isSelf" class="text-[10px] px-1.5 py-0.5 rounded bg-[#FF4D00] text-white">أنت</span></div>
+                  <div class="text-xs text-zinc-500">{{ LANGUAGES[p.language]?.flag }} {{ LANGUAGES[p.language]?.nativeName }}</div>
+                </div>
+                <span v-if="p.talking" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <p v-if="!participants.length" class="text-center text-sm text-zinc-400 py-8">سيظهر المشاركون هنا</p>
             </div>
           </div>
-        </div>
-      </aside>
-    </main>
+        </aside>
+      </div>
+    </div>
 
-    <div ref="audioContainer" class="hidden"></div>
+    <div v-if="inviteOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="inviteOpen=false">
+      <div class="w-full max-w-md rounded-[24px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 p-6 shadow-2xl">
+        <div class="flex items-center justify-between"><h3 class="text-lg font-black">دعوة الطرف الآخر</h3><button @click="inviteOpen=false" class="w-8 h-8 rounded-full grid place-items-center bg-zinc-100 dark:bg-white/10"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+        <p class="text-sm text-zinc-500 mt-1">أرسل هذا الرابط — يفتح الغرفة مباشرة.</p>
+        <div class="mt-4 rounded-[16px] border border-dashed border-zinc-300 dark:border-white/15 bg-zinc-50 dark:bg-white/[0.02] p-3 text-center"><div class="text-[11px] font-black tracking-widest text-zinc-400">رمز الغرفة</div><div class="text-[20px] font-black tracking-[0.32em] text-[#FF4D00] select-all">{{ roomCode }}</div></div>
+        <div class="mt-3 relative"><input :value="inviteUrl" readonly @click="selectInvite" dir="ltr" class="w-full h-12 rounded-[14px] border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 px-4 pe-20 font-mono text-sm focus:border-[#FF4D00] outline-none" /><button @click="doCopyInvite" class="absolute left-1 top-1 bottom-1 px-4 rounded-[12px] bg-[#FF4D00] text-white text-xs font-black">{{ copied ? 'تم ✓' : 'نسخ' }}</button></div>
+        <button @click="inviteOpen=false" class="mt-3 w-full h-11 rounded-[14px] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black">تم</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useSocket } from '~/composables/useSocket';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { LANGUAGES } from '~/composables/languages';
 import { useVoiceTranslator } from '~/composables/useVoiceTranslator';
-import { LANGUAGES, isRtl, DEFAULT_LANG } from '~/composables/languages';
-
+import { useSocket } from '~/composables/useSocket';
+import { useTheme } from '~/composables/useTheme';
 const route = useRoute();
 const router = useRouter();
-const { socket, connect, disconnect } = useSocket();
-
-const userName = String(route.query.name || '');
-const userLang = String(route.query.lang || 'en');
-const targetLang = String(route.query.targetLang || userLang);
-const userTargetLang = targetLang;
-const roomProvider = String(route.query.provider || 'auto');
-
-// Saved target language: each user hears their OWN language from the first visit.
-const SAVED_KEY = 'talkbridge-target-lang';
-const savedTarget = (() => { try { return localStorage.getItem(SAVED_KEY) || ''; } catch (e) { return ''; } })();
-if (savedTarget && savedTarget !== targetLang) {
-  // Respect the language the user previously chose to hear.
-  router.replace({ query: { ...route.query, targetLang: savedTarget } });
-}
-
-if (!userName || !userLang) router.replace('/');
-
-const participants = ref<any[]>([]);
-const mySocketId = ref('');
-const transcripts = ref<any[]>([]);
-const activeSpeaker = ref<string | null>(null);
-const inviteLink = ref('');
+const theme = useTheme();
+const roomCode = computed<string>(() => String(route.params.code || '').toUpperCase());
+const name = ref('');
+const myLang = ref('ar');
+const targetLang = ref('en');
+const started = ref(false);
+const connecting = ref(false);
+const errorMsg = ref('');
+const micOn = ref(false);
+const cameraOn = ref(false);
+const mediaError = ref('');
+const selfStream = ref<MediaStream | null>(null);
+const activeTab = ref<'transcript' | 'chat' | 'participants'>('transcript');
+const inviteOpen = ref(false);
 const copied = ref(false);
-const scrollContainer = ref<HTMLElement | null>(null);
-
-let autoSpeak = true;
-
-const otherParticipants = computed(() => participants.value.filter(p => p.socketId !== mySocketId.value));
-
-const gridClass = computed(() => {
-  const n = otherParticipants.value.length;
-  if (n <= 1) return 'grid-cols-1';
-  if (n === 2) return 'grid-cols-1 sm:grid-cols-2';
-  if (n === 3) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
-  return 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-});
-
-// Core translator (no WebRTC): local mic/tab capture → STT → translate → speak.
+const manualTranscript = ref('');
+const tabs = [
+  { key: 'transcript', label: 'النص' },
+  { key: 'chat', label: 'الدردشة' },
+  { key: 'participants', label: 'المشاركون' },
+];
+const participants = ref<any[]>([]);
+const transcripts = ref<any[]>([]);
+const chatMessages = ref<any[]>([]);
+const videoFrames = ref<Record<string,string>>({});
+let frameTimer: any = null;
+const mySocketId = computed(() => socket.value?.id || '');
 const translator = useVoiceTranslator({
-  myLang: userLang,
-  myTargetLang: targetLang,
-  onFinalText: async (text, fromLang) => {
-    // 1) Show my own recognition locally.
-    transcripts.value.push({ speakerName: 'You', speakerLanguage: fromLang, originalText: text, translatedText: '', isSelf: true });
-    // 2) Relay the ORIGINAL text to other listeners (they translate + speak in their own lang).
-    socket.value?.emit('text-chunk', { text });
-    // 3) If my target differs from my source, also speak my own translation back to me.
-    if (fromLang !== targetLang && autoSpeak) {
-      const t = await translator.translate(text, fromLang, targetLang);
-      if (t) { await translator.speak(t, targetLang); }
-    }
-  }
+  myLang: myLang.value,
+  myTargetLang: targetLang.value,
+  onFinalText: (text, fromLang) => { handleSelfText(text, fromLang); },
 });
-
-const startMic = () => translator.startMic();
-const startTab = () => translator.startTabAudio();
-
-const copyCode = async () => {
-  const link = inviteLink.value || `${window.location.origin}/join/${route.params.code}`;
-  try { await navigator.clipboard.writeText(link); copied.value = true; setTimeout(() => copied.value = false, 1500); } catch (e) {}
-};
-
-const endMeeting = () => { translator.stop(); disconnect(); router.replace('/'); };
-
-const setupSocketListeners = () => {
-  if (!socket.value) return;
-  mySocketId.value = socket.value.id || '';
-  socket.value.on('room-state', (data: any) => {
-    participants.value = data.participants || [];
-    if (!mySocketId.value) mySocketId.value = socket.value.id || '';
-  });
-  socket.value.on('participant-left', (data: any) => {
-    participants.value = participants.value.filter(p => p.socketId !== data.socketId);
-  });
-  socket.value.on('participant-joined', (data: any) => {
-    const existing = participants.value.find(p => p.socketId === data.participant.socketId);
-    if (!existing) participants.value.push(data.participant);
-  });
-
-  // When another listener sends their recognized text, translate into MY language
-  // and speak it back to me (voice-to-voice, in my language only).
-  socket.value.on('transcript-update', async (data: any) => {
-    if (!data || !data.originalText) return;
-    const isSelf = data.speakerName === userName;
-    const speakerP = participants.value.find(p => p.name === data.speakerName);
-    const fromLang = speakerP ? speakerP.language : userLang;
-
-    let translated = '';
-    if (fromLang !== targetLang) {
-      translated = await translator.translate(data.originalText, fromLang, targetLang);
-    }
-    if (!translated) translated = data.originalText;
-
-    if (speakerP) activeSpeaker.value = speakerP.socketId;
-    if (autoSpeak && !isSelf && fromLang !== targetLang) {
-      await translator.speak(translated, targetLang);
-    }
-    setTimeout(() => { activeSpeaker.value = null; }, 4000);
-
-    transcripts.value.push({
-      speakerName: isSelf ? 'You' : data.speakerName,
-      speakerLanguage: fromLang,
-      originalText: data.originalText,
-      translatedText: (fromLang !== targetLang ? translated : ''),
-      isSelf
-    });
-  });
-};
-
-watchScroll();
-function watchScroll() {
-  watch(() => transcripts.value.length, async () => {
-    await nextTick();
-    if (scrollContainer.value) scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
-  });
+const { socket, connect, on, emit, disconnect } = useSocket();
+// Expose for e2e debug (Playwright)
+if (typeof window !== 'undefined') {
+  (window as any).__talkbridgeEmit = emit;
+  (window as any).__talkbridgeTranscripts = transcripts;
+  (window as any).__talkbridgeChat = chatMessages;
 }
-
-onMounted(() => {
-  if (!userName || !userLang) { router.replace('/'); return; }
-  inviteLink.value = `${window.location.origin}/join/${route.params.code}`;
-  connect(route.params.code, userName, userLang, targetLang, roomProvider);
+function startCallPreset() {
+  if (!name.value.trim()) { errorMsg.value = 'يرجى إدخال اسمك'; return; }
+  if (!roomCode.value) { errorMsg.value = 'رمز غرفة غير صالح'; return; }
+  translator.setMyLang(myLang.value);
+  translator.setMyTargetLang(targetLang.value);
+  started.value = true;
+  enterRoom();
+  enableDevices();
+}
+function enterRoom() {
+  connecting.value = true;
+  errorMsg.value = '';
+  participants.value = [{ socketId: socket.value?.id || 'self', name: name.value.trim(), language: myLang.value, targetLanguage: targetLang.value, isSelf: true }];
+  connect(roomCode.value, name.value.trim(), myLang.value, targetLang.value);
   setupSocketListeners();
+  connecting.value = false;
+}
+async function enableDevices() {
+  if (!navigator.mediaDevices?.getUserMedia) { mediaError.value = 'المتصفح لا يدعم الكاميرا/الميكروفون'; return; }
+  // Unlock speechSynthesis for later remote audio (requires user gesture)
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      const unlock = new SpeechSynthesisUtterance(' ');
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
+      window.speechSynthesis.cancel();
+    }
+  } catch {}
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    selfStream.value = stream;
+    cameraOn.value = true;
+    micOn.value = true;
+    translator.startMic();
+    mediaError.value = '';
+    setTimeout(() => startVideoFrames(), 600);
+  } catch (e: any) {
+    console.warn('[media] permission denied/unavailable', e);
+    mediaError.value = 'لم يتم منح إذن الكاميرا/الميكروفون. فعّلهما من شريط العنوان ثم اضغط الكاميرا.';
+    try { translator.startMic(); micOn.value = true; } catch {}
+  }
+}
+function toggleCamera() {
+  if (selfStream.value) {
+    const tracks = selfStream.value.getVideoTracks();
+    if (cameraOn.value) { tracks.forEach((t) => t.enabled = false); cameraOn.value = false; stopVideoFrames(); }
+    else { tracks.forEach((t) => t.enabled = true); cameraOn.value = true; startVideoFrames(); }
+    if (micOn.value) { selfStream.value.getAudioTracks().forEach((t) => t.enabled = true); }
+  } else { enableDevices(); }
+}
+function toggleMic() {
+  if (!micOn.value) { micOn.value = true; if (selfStream.value) selfStream.value.getAudioTracks().forEach((t) => t.enabled = true); translator.startMic(); }
+  else { micOn.value = false; if (selfStream.value) selfStream.value.getAudioTracks().forEach((t) => t.enabled = false); translator.stop(); }
+}
+function startVideoFrames() {
+  // Disabled temporarily to avoid WS flood — remote video will show as avatar
+  // TODO: re-enable with lower frequency after text/audio stabilized
+  return;
+  // stopVideoFrames();
+  // frameTimer = setInterval(() => {
+  //   if (!cameraOn.value || !selfStream.value) return;
+  //   try {
+  //     const video = document.querySelector('video') as HTMLVideoElement;
+  //     if (!video || video.videoWidth === 0) return;
+  //     const canvas = document.createElement('canvas');
+  //     canvas.width = 320; canvas.height = 180;
+  //     const ctx = canvas.getContext('2d'); if (!ctx) return;
+  //     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  //     const frame = canvas.toDataURL('image/jpeg', 0.55);
+  //     if (frame.length < 150000) emit('video-frame', { frame });
+  //   } catch {}
+  // }, 900);
+}
+function stopVideoFrames() { if (frameTimer) { clearInterval(frameTimer); frameTimer = null; } }
+function playJoinSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880;
+    g.gain.value = 0.08;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+    setTimeout(() => { try { o.stop(); ctx.close(); } catch {} }, 300);
+  } catch {}
+}
+function setupSocketListeners() {
+  on('room-state', (data) => {
+    const list = Array.isArray(data?.participants) ? data.participants : [];
+    const prevCount = participants.value.filter(p=>!p.isSelf).length;
+    syncParticipants(list);
+    const newCount = participants.value.filter(p=>!p.isSelf).length;
+    if (newCount > prevCount) playJoinSound();
+  });
+  on('participant-joined', (data) => {
+    const p = data?.participant; if (!p) return;
+    const others = participants.value.filter((x) => !x.isSelf);
+    const exists = others.some((x) => x.socketId === p.socketId);
+    if (!exists) { participants.value = [participants.value.find((x) => x.isSelf), { ...p }].filter(Boolean); playJoinSound(); }
+  });
+  on('participant-left', (data) => { const id = data?.socketId; participants.value = participants.value.filter((x) => x.socketId !== id || x.isSelf); if (id) delete videoFrames.value[id]; });
+  on('transcript-update', (data) => handleRemoteText(data));
+  on('translated-audio', (data) => handleTranslatedAudio(data));
+  on('chat-message', async (data) => {
+    if (!data?.text) return;
+    let displayText = data.text;
+    // Translate chat to receiver's target language if sender language differs
+    if (data.language && data.language !== targetLang.value) {
+      try {
+        const tr = await translator.translate(data.text, data.language, targetLang.value);
+        if (tr && tr.trim()) displayText = tr;
+      } catch {}
+    }
+    chatMessages.value.push({ name: data.name, text: displayText, originalText: data.text, isSelf: false });
+    playJoinSound();
+  });
+  on('video-frame', (data) => { if (data?.socketId && data?.frame && data.socketId !== mySocketId.value) { videoFrames.value[data.socketId] = data.frame; } });
+}
+function syncParticipants(list: any[]) {
+  const self = participants.value.find((x) => x.isSelf);
+  const others = list.filter((p: any) => p.socketId !== socket.value?.id).map((p: any) => ({ ...p, isSelf: false }));
+  participants.value = [self, ...others].filter(Boolean);
+}
+function handleSelfText(text: string, fromLang: string) {
+  transcripts.value.push({ speakerName: name.value.trim(), speakerLanguage: fromLang, originalText: text, translatedText: '', isSelf: true });
+  emit('text-chunk', { text });
+}
+function sendManualTranscript() {
+  const t = manualTranscript.value.trim();
+  if (!t) return;
+  manualTranscript.value = '';
+  handleSelfText(t, myLang.value);
+}
+async function handleRemoteText(data: any) {
+  const original = data?.originalText || '';
+  if (!original) return;
+  const fromLang = data?.speakerLang || data?.speakerLanguage || myLang.value;
+  // Dedupe: transcript-update and translated-audio may both arrive for the same chunk.
+  const dup = transcripts.value.some((t) => !t.isSelf && (t.socketId || '') === (data?.chunkId || '') );
+  if (dup) return;
+  // Display the original immediately; the translated text + voice arrive via
+  // translated-audio (server-side HF translation + Edge TTS) shortly after.
+  transcripts.value.push({ socketId: data?.chunkId || '', speakerName: data?.speakerName || 'طرف آخر', speakerLanguage: fromLang, originalText: original, translatedText: '', isSelf: false });
+}
+function handleTranslatedAudio(data: any) {
+  const text = (data?.translatedText && String(data.translatedText).trim()) || data?.originalText || '';
+  const lang = data?.speakerLang || data?.speakerLanguage || myLang.value;
+  if (!text || !data?.speakerName) return;
+  // Update the pending transcript entry (matched by socketId) with the translation.
+  let found = false;
+  const target = data?.chunkId || '';
+  for (const t of transcripts.value) {
+    if (!t.isSelf && t.socketId && t.socketId === target) { t.translatedText = text; found = true; break; }
+  }
+  // Fallback append if not matched.
+  if (!found) {
+    const already = transcripts.value.some((t) => !t.isSelf && t.originalText === data.originalText && t.speakerName === data.speakerName);
+    if (!already) transcripts.value.push({ socketId: target, speakerName: data.speakerName || 'طرف آخر', speakerLanguage: lang, originalText: data.originalText || '', translatedText: text, isSelf: false });
+  }
+  if (data?.audioBase64) {
+    try {
+      if (typeof window !== 'undefined') (window as any).__talkbridgeLastAudio = { len: data.audioBase64.length, ts: Date.now() };
+      const audio = new Audio(`data:audio/mp3;base64,${data.audioBase64}`);
+      audio.play().catch(()=>{});
+    } catch (e) {}
+    return;
+  }
+  // No server audio — fall back to local speechSynthesis so audio always plays.
+  try { translator.speak(text, targetLang.value); } catch (e) {}
+}
+function sendChat(payload: { text: string }) {
+  if (!payload.text.trim()) return;
+  chatMessages.value.push({ name: name.value.trim(), text: payload.text, originalText: payload.text, isSelf: true });
+  emit('chat', { name: name.value.trim(), text: payload.text, language: myLang.value });
+}
+function openInvite() { inviteOpen.value = true; copied.value = false; }
+const inviteUrl = computed<string>(() => { if (typeof window === 'undefined') return ''; return `${window.location.origin}/join/${roomCode.value}`; });
+function selectInvite(e: Event) { const el = e.target as HTMLInputElement; el?.select(); }
+function doCopyInvite() {
+  const url = inviteUrl.value;
+  const copy = (txt: string) => {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(txt);
+    return new Promise<void>((resolve, reject) => {
+      const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); resolve(); } catch (e) { reject(e); }
+      document.body.removeChild(ta);
+    });
+  };
+  copy(url).then(() => { copied.value = true; setTimeout(() => (copied.value = false), 2000); }).catch(() => { copied.value = true; });
+}
+function stopDevices() { stopVideoFrames(); if (selfStream.value) { selfStream.value.getTracks().forEach((t) => t.stop()); selfStream.value = null; } cameraOn.value = false; micOn.value = false; videoFrames.value = {}; }
+function leaveRoom() { stopDevices(); translator.stop(); try { disconnect(); } catch (e) {} started.value = false; }
+function confirmLeave() { if (window.confirm('هل تريد مغادرة المكالمة؟')) { leaveRoom(); router.push('/'); } }
+function leaveToHome() { leaveRoom(); router.push('/'); }
+const gridParticipants = computed(() => {
+  const standIn = participants.value.map((p) => ({ ...p, frame: videoFrames.value[p.socketId || ''] || null }));
+  const selfIdx = standIn.findIndex((p) => p.isSelf);
+  if (selfIdx >= 0) standIn[selfIdx].videoOn = cameraOn.value;
+  return standIn;
 });
-
-onUnmounted(() => { translator.stop(); disconnect(); });
+onMounted(() => {
+  theme.init();
+  const q = route.query;
+  if (q.name) name.value = String(q.name);
+  if (q.lang && LANGUAGES[String(q.lang)]) myLang.value = String(q.lang);
+  if (q.targetLang && LANGUAGES[String(q.targetLang)]) { targetLang.value = String(q.targetLang); }
+  else { const savedLang = localStorage.getItem('talkbridge-target-lang'); if (savedLang && LANGUAGES[savedLang]) targetLang.value = savedLang; }
+  if (q.name && q.lang) startCallPreset();
+});
+onUnmounted(() => { try { leaveRoom(); } catch (e) {} });
 </script>

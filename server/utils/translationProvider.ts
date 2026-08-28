@@ -44,6 +44,13 @@ export async function translateText(text: string, sourceLang: string, targetLang
   const tryHf = effectiveProvider === 'hf' || effectiveProvider === 'auto';
   const tryLt = effectiveProvider === 'libretranslate' || (!!ltUrl && effectiveProvider === 'auto');
 
+  // Fast, reliable, no-key path first so calls don't stall on cold model loads.
+  try {
+    return await translateViaMyMemory(text, sourceLang, targetLang);
+  } catch (e) {
+    console.error('[translate] MyMemory failed, trying next:', (e as any)?.message || e);
+  }
+
   if (tryHf) {
     try {
       const out = await translateViaHf(text, sourceLang, targetLang, hfModel, hfApi);
@@ -74,13 +81,6 @@ export async function translateText(text: string, sourceLang: string, targetLang
     return await translateViaGroq(text, sourceLang, targetLang);
   } catch (e) {
     console.error('[translate] Groq failed:', (e as any)?.message || e);
-  }
-
-  // Last free resort: MyMemory (no key, works server-side, CORS-friendly).
-  try {
-    return await translateViaMyMemory(text, sourceLang, targetLang);
-  } catch (e) {
-    console.error('[translate] MyMemory failed, returning original:', (e as any)?.message || e);
   }
 
   return text;

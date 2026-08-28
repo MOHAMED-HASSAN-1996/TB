@@ -60,10 +60,52 @@ export function useVoiceTranslator(opts: {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       source.value = 'mic';
       errorMsg.value = '';
-      startRecognition();
+      const SpeechR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechR) {
+        startRecognition();
+      } else {
+        // No Web Speech API (Safari/Firefox) — fall back to recording + HF Whisper.
+        startMicRecorder();
+      }
     } catch (e: any) {
       errorMsg.value = `Mic unavailable: ${e?.message || e}`;
     }
+  }
+
+  // Fallback STT: record mic chunks and POST to the free /api/stt (HF Whisper)
+  // so text works on browsers without the Web Speech API.
+  let micRecorder: MediaRecorder | null = null;
+  let micRecTimer: any = null;
+  let micChunks: BlobPart[] = [];
+  let recordingActive = false;
+  function startMicRecorder() {
+    try {
+      const audioTracks = stream?.getAudioTracks();
+      if (!audioTracks || audioTracks.length === 0) { errorMsg.value = 'No mic audio track.'; return; }
+      micChunks = [];
+      micRecorder = new MediaRecorder(new MediaStream(audioTracks), { mimeType: 'audio/webm' });
+      micRecorder.ondataavailable = async (e: BlobEvent) => {
+        if (e.data && e.data.size > 0 && recordingActive) {
+          micChunks.push(e.data);
+          const blob = new Blob(micChunks.splice(0), { type: 'audio/webm' });
+          const b64 = await blobToBase64(blob);
+          try {
+            const res = await fetch('/api/stt', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ audioBase64: b64 })
+            });
+            const j = await res.json();
+            const text = (j?.text || '').trim();
+            interimText.value = text ? `…${text}` : '';
+            if (text && text.length > 3) opts.onFinalText?.(text, myLang.value);
+          } catch (err) { console.warn('[mic-stt] chunk failed', err); }
+        }
+      };
+      micRecorder.onstop = () => { recordingActive = false; };
+      micRecorder.start(6000);
+      recordingActive = true;
+      listening.value = true;
+    } catch (e: any) { errorMsg.value = `Mic recorder failed: ${e?.message || e}`; }
   }
 
   async function startTabAudio() {
@@ -237,7 +279,7 @@ export function useVoiceTranslator(opts: {
       if (out && String(out).trim()) return String(out).trim();
     } catch (e) { console.warn('[translate] HF NLLB failed', e); }
 
-    return '';
+    return text;
   }
 
   /* ---------------------------------------------------------------------- */
@@ -282,7 +324,8 @@ export function useVoiceTranslator(opts: {
     listening.value = false;
     if (recognition) { try { recognition.abort(); recognition.stop(); } catch (e) {} recognition = null; }
     if (recorder) { try { recorder.stop(); } catch (e) {} recorder = null; }
-    if (recTimer) { clearTimeout(recTimer); recTimer = null; }
+    if (micRecorder) { recordingActive = false; try { micRecorder.stop(); } catch (e) {} micRecorder = null; }
+    if (micRecTimer) { clearTimeout(micRecTimer); micRecTimer = null; }
     stopStream();
     if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     speaking.value = false;
