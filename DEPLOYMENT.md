@@ -1,75 +1,79 @@
 # TalkBridge — Free Deployment (No Credit Card)
 
-Signaling uses **SSE** (not WebSocket), so it runs on any free Node host that
-keeps a process alive — no credit card needed. The app is already configured
-to read `process.env.PORT` and bind to the host, so it works on all options
-below with zero code changes.
+Signaling uses a **WebSocket** (Nitro/crossws) on a **Durable Object**, so it
+runs on Cloudflare Workers — the internet's free, never-sleeping edge — with
+**zero servers to babysit**, no credit card, and no idle timeout. This is the
+**recommended** path.
 
-**Recommended (Asian / non-traditional, zero card): [Zeabur Free Plan](#1-zeabur-recommended)**
+**Recommended: [Cloudflare Workers](#cloudflare-workers-recommended)**
 
 ---
 
-## 1. Zeabur (Recommended)
+## Cloudflare Workers (Recommended)
 
-Singapore-based PaaS (like Render/Railway but Asia-focused). Free plan is
-**$0/month, NO credit card**. Runs Nuxt as a full container, so SSE/EventSource
-signaling has NO per-request timeout — it behaves like a real server.
+Cloudflare's free plan is $0/month, no credit card, no sleep. WebSocket
+signaling is pinned to a single Durable Object (`$DurableObject`), so all peers
+in a room share state and cross-peer messaging works — even though Workers are
+otherwise stateless.
+
+### Prerequisites
+- Node 20+ (wrangler is already a devDependency).
+- A Cloudflare account (free) — https://dash.cloudflare.com/sign-up
 
 ### Steps
-1. Go to https://zeabur.com → sign up (GitHub login) → Free plan.
-2. Dashboard → **Create Project** → **Deploy service** → **Deploy from source code (Git)**.
-3. Import your GitHub repo `MOHAMED-HASSAN-1996/TB`.
-4. Zeabur auto-detects Nuxt. In the service **Variables** tab add:
-   - `SERVER_PRESET=zeabur`
-   - (optional) `HF_API`, `TRANSLATION_PROVIDER=auto`, etc.
-5. Zeabur gives you a free subdomain like `https://tb-xxxxx.zeabur.app` with HTTPS.
-6. `zbpack.json` is already in the repo (build + start commands).
+1. Log in to wrangler:
+   ```bash
+   npm run postinstall   # ensures nuxt prepare ran
+   npx wrangler login    # opens browser, authorizes your Cloudflare account
+   ```
+2. Build + deploy with the `cloudflare-durable` preset (Auto-merges
+   `wrangler.jsonc` → `dist/server/wrangler.json` with the Durable Object):
+   ```bash
+   npm run deploy:cf
+   ```
+   Wrangler prints a live `*.workers.dev` URL with HTTPS. WebRTC works there.
+
+3. (Optional) Preview locally before deploying:
+   ```bash
+   npm run preview:cf   # nuxt build + `wrangler dev --local`
+   ```
+
+### What the setup includes
+- `wrangler.jsonc` — Worker name, `$DurableObject` binding + migration.
+- `nuxt.config.ts` → `nitro.cloudflare.deployConfig: true` — carries the
+  wrangler config into the build.
+- `scripts/cf.mjs` — cross-platform build/deploy (`NITRO_PRESET=cloudflare-durable`).
+- `package.json` — `build:cf`, `preview:cf`, `deploy:cf`, wrangler devDep.
+
+### Env vars (all optional / free-tier defaults)
+Set these via `npx wrangler secret put <NAME>` or the dashboard:
+- `HF_API` — free HuggingFace token (raises translation/STT rate limits)
+- `TRANSLATION_PROVIDER` — `auto` (default) | `hf` | `libretranslate`
+- `LIBRETRANSLATE_URL` — self-hosted LibreTranslate URL (optional)
+
+Translation & TTS calls are outbound HTTPS from the Worker — no paid keys needed.
 
 ### Notes
-- Free plan auto-sleeps on inactivity and cold-starts on next request (accepted).
-- WebRTC needs HTTPS — Zeabur provides it automatically.
+- Free subdomain `https://talkbridge.<you>.workers.dev` (HTTPS → WebRTC OK).
+- The Worker + Durable Object are always on — no cold starts for signaling.
+- Durable Objects free tier: 1M+ requests/month included.
+- After your first `wrangler deploy`, you can also wire it to a custom domain.
 
 ---
 
-## 2. HuggingFace Spaces (older option — Docker tier is now paid)
+## Alternative Node hosts (still valid for self-hosting)
 
-### Steps
-1. Go to https://huggingface.co/spaces (logged in as `mh0390052`).
-2. Click **Create new Space**.
-   - Owner: `MOHAMED-HASSAN-1996` (or your account)
-   - Space name: `talkbridge`
-   - **SDK: Docker** → **Dockerfile** (the repo has a `Dockerfile` already)
-   - **Visibility: Public**
-   - Plan: **Free**
-3. On the next screen choose **Connect a Git repo** → pick `MOHAMED-HASSAN-1996/TB`
-   (this repo). HF will build & deploy automatically.
-4. Wait ~3–5 min for the build. The Space URL will be:
-   `https://MOHAMED-HASSAN-1996-talkbridge.hf.space` (or your namespace).
+If you'd rather run a long-lived Node server you control, the same code works
+with `npm run build && node .output/server/index.mjs`. Options:
 
-## Optional env vars (Settings → Variables)
-- `HF_API` — free HuggingFace token (raises translation limits)
-- `HF_MODEL` — `facebook/nllb-200-distilled-600M` (default; any HF model works)
-- `TRANSLATION_PROVIDER` — `auto` (default)
+### 1. Zeabur (Asia-focused PaaS)
+Singapore-based, free plan, no credit card. Auto-detects Nuxt.
 
-## Notes
-- First load may take ~30s (HF free tier cold start). Reload once.
-- Camera/mic need `https://` — HF Spaces provides it automatically.
-- For 24/7 always-on, upgrade the Space or use Oracle Cloud Always-Free.
+### 2. HuggingFace Spaces (Docker - now paid tier)
+Use only if you accept the paid Docker tier; the repo's `Dockerfile` is ready.
 
----
-
-## 3. Koyeb (zero card, web service, sleeps much less)
-
-Koyeb's Hobby plan is free with **no credit card** and runs a 512 MB web
-service (Docker container). It stays awake far longer than Render/Zeabur free
-tiers and supports long-lived SSE connections.
-
-1. Go to https://koyeb.com → sign up (GitHub login) → free Hobby plan.
-2. **Create Service** → select your GitHub repo → **Docker** (or auto-detect).
-3. Build command: `npm install && npm run build`
-4. Run command: `node .output/server/index.mjs`
-5. Expose **port 3000** (set `PORT=3000` if asked) → get an HTTPS URL.
-6. No code changes needed (`nuxt.config.ts` reads `process.env.PORT`, binds host).
+### 3. Koyeb (zero card, web service)
+Koyeb Hobby is free no-card. `npm run build` then `node .output/server/index.mjs`.
 
 ---
 

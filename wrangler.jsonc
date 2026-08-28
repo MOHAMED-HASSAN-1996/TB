@@ -1,0 +1,27 @@
+// Cloudflare Workers config for TalkBridge.
+// Nitro merges this into the build output (dist/server/wrangler.json) when
+// built with the `cloudflare-durable` preset, so `wrangler deploy` uses it.
+//
+// WebSocket signaling runs on a single TURN-free Durable Object ("server"),
+// which pins every /ws connection to one isolate so cross-peer publish and
+// the in-memory room state are consistent across clients.
+{
+  "name": "talkbridge",
+  "main": "server/index.mjs",
+  "compatibility_date": "2024-09-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "$DurableObject",
+        "class_name": "$DurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["$DurableObject"]
+    }
+  ]
+}

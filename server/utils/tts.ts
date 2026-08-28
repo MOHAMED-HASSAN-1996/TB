@@ -1,12 +1,11 @@
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { readFile, unlink } from 'node:fs/promises';
-import { EdgeTTS } from 'node-edge-tts';
 
-// Fallback logic incase node-edge-tts CLI is not installed directly or we want to use the library interface
+// Lazy-loaded so node-edge-tts (a Node-oriented CJS package with CLI deps
+// like ws / yargs) is not pulled into the WebSocket module graph eagerly,
+// which otherwise breaks Workers bundling at module-init time.
 export async function generateTTS(text: string, targetLang: string): Promise<string> {
   const voiceMap: Record<string, string> = {
     'ar': 'ar-SA-ZariyahNeural',
@@ -25,6 +24,7 @@ export async function generateTTS(text: string, targetLang: string): Promise<str
   const tempFilePath = join(tmpdir(), `${randomUUID()}.mp3`);
   
   try {
+    const { EdgeTTS } = await import('node-edge-tts');
     const tts = new EdgeTTS({
       voice: voice,
       lang: voice.split('-').slice(0, 2).join('-'), // "en-US"

@@ -31,6 +31,16 @@ export default defineNuxtConfig({
   nitro: {
     // Listen on the port provided by the host (HF Spaces sets $PORT=7860).
     port: Number(process.env.PORT) || 3000,
-    host: true
+    host: true,
+    experimental: {
+      // Enable WebSocket support (Nitro/crossws) for the realtime signaling
+      // transport (used on Cloudflare Workers + Node hosts). See server/routes/_ws.ts.
+      websocket: true
+    },
+    cloudflare: {
+      // Merge root wrangler.jsonc (Durable Object binding $DurableObject for
+      // WebSocket signaling) into the build and drive `wrangler deploy`.
+      deployConfig: true
+    }
   }
 })

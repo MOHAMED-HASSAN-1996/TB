@@ -1,136 +1,123 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 font-sans relative overflow-hidden">
-    <!-- Ambient Background Effects -->
-    <div class="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-violet-600/20 blur-[150px] rounded-full mix-blend-screen pointer-events-none"></div>
+  <div class="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
+    <!-- Ambient Background -->
+    <div class="fixed top-[-20%] left-[-10%] w-[60%] h-[60%] bg-violet-600/15 blur-[180px] rounded-full mix-blend-screen pointer-events-none"></div>
     <div class="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[150px] rounded-full mix-blend-screen pointer-events-none"></div>
 
-    <div class="w-full max-w-lg relative z-10">
-      <div class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-violet-600 rounded-2xl shadow-[0_0_30px_rgba(124,58,237,0.3)] mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
-            <path d="M12 8v8"></path>
-            <path d="M8 12h8"></path>
+    <div class="w-full max-w-md relative z-10">
+      <!-- Logo & Title -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.35)] mb-5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
           </svg>
         </div>
-        <h1 class="text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-4">TalkBridge</h1>
-        <p class="text-gray-400 text-lg max-w-md mx-auto leading-relaxed">Cross-language professional voice meetings. Understand clients natively, instantly.</p>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">TalkBridge</h1>
+        <p class="text-gray-400 text-sm sm:text-base max-w-xs mx-auto leading-relaxed">Speak your language. Everyone hears theirs — translated voice + live text. No installs, 100% free.</p>
       </div>
 
-      <div class="bg-[#141414]/80 backdrop-blur-xl border border-[#1f1f1f] rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-80"></div>
-        
-        <!-- Setup Profile Section -->
-        <div class="mb-8">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
-              <span class="text-violet-400 font-bold text-sm">1</span>
-            </div>
-            <h2 class="text-xl font-bold text-white">Your Profile</h2>
-          </div>
-          
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide">Display Name</label>
-              <input v-model="userName" type="text" placeholder="e.g. Alex" 
-                     class="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition outline-none" />
-            </div>
-            
-            <div>
-              <label class="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide">My Language</label>
-              <select v-model="myLanguage" class="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-3 text-white appearance-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition cursor-pointer">
-                <option v-for="(name, code) in languageNames" :key="code" :value="code">
-                  {{ flags[code] }} {{ name }}
-                </option>
-              </select>
-            </div>
+      <!-- Main Card -->
+      <div class="bg-[#111111]/90 backdrop-blur-xl border border-[#1f1f1f] rounded-2xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
+        <div class="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-500"></div>
 
-            <div>
-              <label class="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide">Translation Engine (Free)</label>
-              <select v-model="translationProvider" class="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-3 text-white appearance-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition cursor-pointer">
-                <option value="auto">Auto (HF NLLB-200 → LibreTranslate)</option>
-                <option value="hf">HuggingFace model (best quality)</option>
-                <option value="libretranslate">LibreTranslate (fastest)</option>
-              </select>
-              <p class="text-xs text-gray-600 mt-2">All engines are 100% free. With HuggingFace you can plug in ANY model id (set <code>HF_MODEL</code> on the server).</p>
-            </div>
+        <!-- Name -->
+        <div class="mb-5">
+          <label class="block text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Your Name</label>
+          <input v-model="userName" type="text" placeholder="Enter your name"
+                 class="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition outline-none" />
+        </div>
+
+        <!-- Language -->
+        <div class="mb-5">
+          <label class="block text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Your Language (you speak)</label>
+          <div class="relative">
+            <select v-model="myLanguage" class="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-2.5 text-white text-sm appearance-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition cursor-pointer pr-10">
+              <option v-for="(meta, code) in languages" :key="code" :value="code">{{ meta.flag }} {{ meta.native }} · {{ meta.name }}</option>
+            </select>
+            <svg class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </div>
         </div>
 
-        <!-- Action Section -->
-        <div>
-          <button @click="createMeeting" :disabled="!isSetupValid || isLoading"
-                  class="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(124,58,237,0.4)] hover:shadow-[0_0_30px_rgba(124,58,237,0.6)] transition-all flex items-center justify-center gap-3 group/btn">
-            <span v-if="!isLoading">Start a Meeting</span>
-            <div v-if="!isLoading" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover/btn:translate-x-1 transition-transform">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </div>
-            <svg v-if="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          </button>
+        <!-- Hear in -->
+        <div class="mb-6">
+          <label class="block text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">You hear translations in</label>
+          <div class="relative">
+            <select v-model="myTargetLanguage" class="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-2.5 text-white text-sm appearance-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition cursor-pointer pr-10">
+              <option v-for="(meta, code) in languages" :key="code" :value="code">{{ meta.flag }} {{ meta.native }} · {{ meta.name }}</option>
+            </select>
+            <svg class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <p v-if="myLanguage === myTargetLanguage" class="text-[11px] text-gray-500 mt-1.5">Same as your language — you'll only see the transcript, no re-speaking.</p>
+        </div>
+
+        <!-- Create Button -->
+        <button @click="createMeeting" :disabled="!isValid || isLoading"
+                class="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-[0_0_25px_rgba(124,58,237,0.3)] hover:shadow-[0_0_35px_rgba(124,58,237,0.5)] transition-all text-sm flex items-center justify-center gap-2">
+          <span v-if="!isLoading">Create Meeting</span>
+          <svg v-if="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3 my-5">
+          <div class="flex-1 h-px bg-[#1f1f1f]"></div>
+          <span class="text-[10px] text-gray-600 uppercase tracking-widest font-semibold">or join</span>
+          <div class="flex-1 h-px bg-[#1f1f1f]"></div>
+        </div>
+
+        <!-- Join by Code -->
+        <div class="flex gap-2">
+          <input v-model="joinCode" placeholder="Paste meeting code"
+                 class="flex-1 bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-2.5 text-gray-200 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition" />
+          <button @click="joinByCode" :disabled="!joinCode.trim()"
+                  class="bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a] disabled:opacity-40 text-white font-bold px-5 rounded-xl text-sm transition-colors">Join</button>
         </div>
       </div>
-      
-      <!-- Join by Link Info -->
-      <div class="mt-8 text-center text-gray-500 text-sm">
-        <p>Client has an invite link? They can just paste it in their browser to join instantly.</p>
-        <div class="mt-4 flex max-w-xs mx-auto gap-2">
-            <input v-model="pastedLink" placeholder="Or paste link here..." class="flex-1 bg-transparent border-b border-gray-700 px-2 py-1 text-gray-300 outline-none focus:border-violet-500 text-sm text-center"/>
-            <button v-if="pastedLink" @click="joinFromPasted" class="text-violet-400 font-bold hover:text-violet-300 text-sm">Join</button>
-        </div>
-      </div>
+
+      <p class="text-center text-gray-600 text-[11px] mt-5">100% free · Mic or any tab audio · Chrome works best</p>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { LANGUAGES } from '~/composables/languages';
 
 const router = useRouter();
-
 const userName = ref('');
 const myLanguage = ref('ar');
+const myTargetLanguage = ref('en');
+const joinCode = ref('');
 const isLoading = ref(false);
-const pastedLink = ref('');
-const translationProvider = ref('auto');
 
-const flags = {
-  'ar': '🇸🇦', 'en': '🇺🇸', 'fr': '🇫🇷', 'es': '🇪🇸', 'de': '🇩🇪',
-  'zh': '🇨🇳', 'hi': '🇮🇳', 'pt': '🇧🇷', 'ru': '🇷🇺', 'tr': '🇹🇷'
-};
+const languages = LANGUAGES;
 
-const languageNames = {
-  'ar': 'Arabic', 'en': 'English', 'fr': 'French', 'es': 'Spanish', 'de': 'German',
-  'zh': 'Chinese', 'hi': 'Hindi', 'pt': 'Portuguese', 'ru': 'Russian', 'tr': 'Turkish'
-};
+const isValid = computed(() => userName.value.trim().length >= 2);
 
-const isSetupValid = computed(() => userName.value.trim().length >= 2 && myLanguage.value);
+onMounted(() => {
+  try {
+    const browserLang = navigator.language.split('-')[0].toLowerCase();
+    if (LANGUAGES[browserLang]) myLanguage.value = browserLang;
+  } catch (e) {}
+});
 
-const generateRoomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 const createMeeting = async () => {
-  if (!isSetupValid.value) return;
+  if (!isValid.value) return;
   isLoading.value = true;
-  
-  const finalCode = generateRoomCode();
-  
-  // Provide a short delay for animation
-  await new Promise(r => setTimeout(r, 600));
-  
+  // Save this user's preferred hear-language so future visits remember it.
+  try { localStorage.setItem('talkbridge-target-lang', myTargetLanguage.value); } catch (e) {}
+  await new Promise(r => setTimeout(r, 300));
   router.push({
-    path: `/room/${finalCode}`,
-    query: { name: userName.value.trim(), lang: myLanguage.value, targetLang: myLanguage.value, provider: translationProvider.value }
+    path: `/room/${generateCode()}`,
+    query: { name: userName.value.trim(), lang: myLanguage.value, targetLang: myTargetLanguage.value, provider: 'auto' }
   });
 };
 
-const joinFromPasted = () => {
-    let codeStr = pastedLink.value.trim();
-    if(codeStr.includes('/')) {
-        const parts = codeStr.split('/');
-        codeStr = parts[parts.length-1];
-    }
-    if(codeStr) {
-        router.push(`/join/${codeStr}`);
-    }
-}
+const joinByCode = () => {
+  const code = joinCode.value.trim().toUpperCase();
+  if (code) router.push(`/join/${code}`);
+};
 </script>
